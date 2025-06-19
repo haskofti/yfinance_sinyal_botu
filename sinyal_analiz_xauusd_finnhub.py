@@ -5,7 +5,7 @@ import smtplib
 from email.message import EmailMessage
 import time
 
-API_KEY = "d1a0ckhr01qltimudkb0d1a0ckhr01qltimudkbg"  # Finnhub API Key
+API_KEY = "d1a0if9r01qltimuel50d1a0if9r01qltimuel5g"  # Finnhub API Key
 SYMBOL = "OANDA:XAUUSD"
 EMAIL_ADRESI = "hafi26@gmail.com"
 EMAIL_GONDER = True
@@ -120,3 +120,4 @@ if __name__ == "__main__":
             rapor += generate_signal(df, interval) + "\n"
     print(rapor)
     send_email(rapor)
+    "api key değiştirildi"
