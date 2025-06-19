@@ -1,1 +1,1 @@
-# yfinance_sinyal_botu
+# finnhub_sinyal_botu
