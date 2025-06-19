@@ -1,4 +1,4 @@
-name: XAUUSD Finnhub Botu
+name: XAUUSD Yfinance Botu
 
 on:
   schedule:
@@ -18,9 +18,9 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Gerekli kütüphaneleri yükle
+    - name: Kütüphaneleri yükle
       run: |
-        pip install requests pandas
+      pip install -r requirements.txt
 
     - name: Botu çalıştır
       run: python sinyal_analiz_xauusd_yfinance.py
