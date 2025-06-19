@@ -4,8 +4,8 @@ from datetime import datetime
 import smtplib
 from email.message import EmailMessage
 
-INTERVALS = ["15m", "30m", "60m", "240m", "1d"]
-SYMBOL = "XAUUSD=X"
+INTERVALS = ["15m", "30m", "60m", "4h", "1d"]
+SYMBOL = "GC=F"  # Gold Futures, yfinance'ta çalışır
 EMAIL_GONDER = True
 EMAIL_ADRESI = "hafi26@gmail.com"
 
