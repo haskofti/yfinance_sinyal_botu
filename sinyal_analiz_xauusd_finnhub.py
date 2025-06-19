@@ -1,50 +1,65 @@
+import requests
 import pandas as pd
-import yfinance as yf
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage
+import time
 
-INTERVALS = ["15m", "30m", "60m", "4h", "1d"]
-SYMBOL = "GC=F"  # Gold Futures, yfinance'ta çalışır
-EMAIL_GONDER = True
+API_KEY = "d1a0ckhr01qltimudkb0d1a0ckhr01qltimudkbg"  # Finnhub API Key
+SYMBOL = "OANDA:XAUUSD"
 EMAIL_ADRESI = "hafi26@gmail.com"
+EMAIL_GONDER = True
 
-def get_data(interval):
-    try:
-        df = yf.download(SYMBOL, period="7d", interval=interval)
-        df = df.dropna()
-        print(f"[{interval}] İlk veri: {df.index[0]}, Son veri: {df.index[-1]}")
+INTERVALS = ["15", "30", "60", "240", "D"]
+
+def get_finnhub_data(resolution):
+    url = f"https://finnhub.io/api/v1/stock/candle"
+    params = {
+        "symbol": SYMBOL,
+        "resolution": resolution,
+        "from": int(time.time()) - 7 * 24 * 60 * 60,  # son 7 gün
+        "to": int(time.time()),
+        "token": API_KEY
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data.get("s") != "ok":
+            print(f"[{resolution}] Veri alınamadı: API boş veri döndü")
+            return None
+        df = pd.DataFrame({
+            "datetime": pd.to_datetime(data["t"], unit="s"),
+            "Open": data["o"],
+            "High": data["h"],
+            "Low": data["l"],
+            "Close": data["c"]
+        })
+        df.set_index("datetime", inplace=True)
+        print(f"[{resolution}] İlk veri: {df.index[0]}, Son veri: {df.index[-1]}")
         return df
-    except Exception as e:
-        print(f"[{interval}] Veri alınamadı:", e)
+    else:
+        print(f"[{resolution}] HTTP Hatası:", response.status_code)
         return None
 
 def get_current_price():
-    try:
-        ticker = yf.Ticker(SYMBOL)
-        return float(ticker.info["regularMarketPrice"])
-    except Exception as e:
-        print("❌ yfinance fiyat alınamadı:", e)
-        return None
+    url = f"https://finnhub.io/api/v1/quote?symbol={SYMBOL}&token={API_KEY}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("c", None)
+    print("Fiyat verisi alınamadı")
+    return None
 
 def calculate_indicators(df):
     df["ma20"] = df["Close"].rolling(window=20).mean()
     df["ma50"] = df["Close"].rolling(window=50).mean()
-    df["ma100"] = df["Close"].rolling(window=100).mean()
     df["ema20"] = df["Close"].ewm(span=20).mean()
     df["ema50"] = df["Close"].ewm(span=50).mean()
-    df["ema100"] = df["Close"].ewm(span=100).mean()
     df["rsi14"] = 100 - (100 / (1 + df["Close"].pct_change().rolling(window=14).mean()))
-    df["momentum"] = df["Close"] - df["Close"].shift(10)
     df["macd"] = df["Close"].ewm(span=12).mean() - df["Close"].ewm(span=26).mean()
     df["signal"] = df["macd"].ewm(span=9).mean()
-    df["bollinger_mid"] = df["Close"].rolling(20).mean()
-    df["bollinger_std"] = df["Close"].rolling(20).std()
-    df["upper_band"] = df["bollinger_mid"] + 2 * df["bollinger_std"]
-    df["lower_band"] = df["bollinger_mid"] - 2 * df["bollinger_std"]
-    df["adx"] = abs(df["Close"].diff()).rolling(14).mean()
-    df["roc"] = df["Close"].pct_change(periods=10)
-    df["willr"] = (df["Close"] - df["Low"].rolling(14).min()) / (df["High"].rolling(14).max() - df["Low"].rolling(14).min())
+    df["upper_band"] = df["Close"].rolling(20).mean() + 2 * df["Close"].rolling(20).std()
+    df["lower_band"] = df["Close"].rolling(20).mean() - 2 * df["Close"].rolling(20).std()
     return df
 
 def generate_signal(df, interval):
@@ -53,17 +68,11 @@ def generate_signal(df, interval):
 
     if latest["ma20"] > latest["ma50"]: sinyal_sayisi += 1
     if latest["ema20"] > latest["ema50"]: sinyal_sayisi += 1
-    if latest["ma50"] > latest["ma100"]: sinyal_sayisi += 1
-    if latest["ema50"] > latest["ema100"]: sinyal_sayisi += 1
     if latest["rsi14"] < 30: sinyal_sayisi += 1
-    if latest["momentum"] > 0: sinyal_sayisi += 1
     if latest["macd"] > latest["signal"]: sinyal_sayisi += 1
     if latest["Close"] > latest["upper_band"]: sinyal_sayisi += 1
-    if latest["adx"] > 20: sinyal_sayisi += 1
-    if latest["roc"] > 0: sinyal_sayisi += 1
-    if latest["willr"] > -0.8: sinyal_sayisi += 1
 
-    if sinyal_sayisi >= 6:
+    if sinyal_sayisi >= 3:
         entry = latest["Close"]
         tp = entry + (entry * 0.01)
         sl = entry - ((tp - entry) / 4)
@@ -83,13 +92,13 @@ def send_email(content):
         return
 
     sender = "hafi26@gmail.com"
-    password = "jxdb eksm rumw huqb"
+    password = "jxdb eksm rumw huqb"  # Uygulama şifresi
     receiver = "hafi26@gmail.com"
 
     try:
         msg = EmailMessage()
         msg.set_content(content)
-        msg["Subject"] = "XAUUSD Çoklu Zaman Sinyal"
+        msg["Subject"] = "XAUUSD Sinyal Raporu"
         msg["From"] = sender
         msg["To"] = receiver
 
@@ -105,10 +114,9 @@ def send_email(content):
 if __name__ == "__main__":
     rapor = f"Sinyal Raporu ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})\n"
     for interval in INTERVALS:
-        df = get_data(interval)
+        df = get_finnhub_data(interval)
         if df is not None:
             df = calculate_indicators(df)
             rapor += generate_signal(df, interval) + "\n"
     print(rapor)
     send_email(rapor)
-"zaman dilimi ve parite değiştirildi"
