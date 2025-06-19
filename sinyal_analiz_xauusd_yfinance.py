@@ -22,7 +22,8 @@ def get_data(interval):
 def get_current_price():
     try:
         ticker = yf.Ticker(SYMBOL)
-        return float(ticker.info["regularMarketPrice"])
+        price = ticker.info.get("regularMarketPrice", None)
+        return float(price) if price is not None else None
     except Exception as e:
         print("❌ Güncel fiyat alınamadı:", e)
         return None
@@ -70,10 +71,14 @@ def generate_signal(df, interval):
 
         current_price = get_current_price()
         if current_price is not None:
-            fark = abs(float(current_price) - float(entry))
-            print(f"[{interval}] Entry: {entry:.2f} | Güncel: {current_price:.2f} | Fark: {fark:.2f}")
-            if fark > 3:
-                return f"[{interval}] ⛔ Sinyal Geçersiz (Fiyat Uzak)\nEntry: {entry:.2f}\nGüncel: {current_price:.2f}"
+            try:
+                fark = abs(float(current_price) - float(entry))
+                print(f"[{interval}] Entry: {entry:.2f} | Güncel: {current_price:.2f} | Fark: {fark:.2f}")
+                if fark > 3:
+                    return f"[{interval}] ⛔ Sinyal Geçersiz (Fiyat Uzak)\nEntry: {entry:.2f}\nGüncel: {current_price:.2f}"
+            except Exception as e:
+                print(f"[{interval}] Fiyat karşılaştırma hatası:", e)
+                return f"[{interval}] ⛔ Sinyal Geçersiz (Fiyat okunamadı)"
 
         return f"[{interval}] AL\nGiriş: {entry:.2f}\nTP: {tp:.2f}\nSL: {sl:.2f}"
     return f"[{interval}] Sinyal Yok"
@@ -83,7 +88,7 @@ def send_email(content):
         return
 
     sender = "hafi26@gmail.com"
-    password = "jxdb eksm rumw huqb"  # Bu şifreyi gizli tut!
+    password = "jxdb eksm rumw huqb"
     receiver = "hafi26@gmail.com"
 
     try:
@@ -111,4 +116,3 @@ if __name__ == "__main__":
             rapor += generate_signal(df, interval) + "\n"
     print(rapor)
     send_email(rapor)
-    "düzeltildi"
