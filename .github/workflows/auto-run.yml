@@ -1,26 +1,26 @@
-name: XAUUSD Yfinance Botu
+name: XAUUSD Sinyal Botu
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Her 15 dakikada bir çalışır (UTC)
-  workflow_dispatch:        # Manuel başlatma da mümkün
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
-  run-bot:
+  run-xauusd-bot:
     runs-on: ubuntu-latest
 
     steps:
     - name: Reposu klonla
       uses: actions/checkout@v3
 
-    - name: Python kur
+    - name: Python kurulumu
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
     - name: Kütüphaneleri yükle
       run: |
-      pip install -r requirements.txt
+        pip install -r requirements.txt
 
     - name: Botu çalıştır
       run: python sinyal_analiz_xauusd_yfinance.py
