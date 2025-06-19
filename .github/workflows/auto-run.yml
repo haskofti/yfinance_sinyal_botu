@@ -1,26 +1,26 @@
-name: XAUUSD Sinyal Botu
+name: XAUUSD Finnhub Botu
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:
+    - cron: '*/15 * * * *'  # Her 15 dakikada bir çalışır (UTC)
+  workflow_dispatch:        # Manuel başlatma da mümkün
 
 jobs:
-  run-xauusd-bot:
+  run-bot:
     runs-on: ubuntu-latest
 
     steps:
     - name: Reposu klonla
       uses: actions/checkout@v3
 
-    - name: Python kurulumu
+    - name: Python kur
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Kütüphaneleri yükle
+    - name: Gerekli kütüphaneleri yükle
       run: |
-        pip install -r requirements.txt
+        pip install requests pandas
 
     - name: Botu çalıştır
-      run: python sinyal_analiz_xauusd_yfinance.py
+      run: python sinyal_analiz_xauusd_finnhub.py
