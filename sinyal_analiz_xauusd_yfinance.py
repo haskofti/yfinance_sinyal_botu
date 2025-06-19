@@ -111,3 +111,4 @@ if __name__ == "__main__":
             rapor += generate_signal(df, interval) + "\n"
     print(rapor)
     send_email(rapor)
+"zaman dilimi ve parite değiştirildi"
