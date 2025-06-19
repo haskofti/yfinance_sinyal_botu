@@ -23,4 +23,4 @@ jobs:
         pip install requests pandas
 
     - name: Botu çalıştır
-      run: python sinyal_analiz_xauusd_finnhub.py
+      run: python sinyal_analiz_xauusd_yfinance.py
